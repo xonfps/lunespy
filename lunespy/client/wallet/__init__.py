@@ -48,13 +48,6 @@ class Account:
         return data
 
 
-    def __repr__(self) -> str:
-        data = ''
-        for key, value in self.__dict__.items():
-                data += f"{key} -> {value}\n"
-        return data
-
-
     def to_json(self, path: str = './data/') -> str:
         from lunespy.utils import export_json
 

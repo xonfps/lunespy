@@ -7,7 +7,7 @@ def all_node_conected_in_node_url(node_url: str = None) -> dict:
         full_url = f'{Node.mainnet_url.value}/peers/all'
     else:
         full_url = f'{node_url}/peers/all' # You have pass your node url with https or other contents
-    
+
     response = get(full_url)
 
     if response.status_code in range(200, 300):
