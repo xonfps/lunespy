@@ -1,68 +1,100 @@
 from pytest import fixture, mark
+from lunespy.utils import now
+
+timestamp = now()
 
 
 @fixture
-def accounts():
+def sender():
     from lunespy.client.wallet import Account
-    pk1 = "8YMbX5BCQdazwgdVfeUpKuoUJrmYpMyGVAGAsNaHVj1u"
-    pk2 = "G6E2xNBWtsRG8XBDmeTQQxZNHHUa6K9dnc9KrYtKyGwM"
 
-    return {
-        "from": Account(private_key=pk1),
-        "to": Account(private_key=pk2)
-    }
-
-
-@fixture
-def basic_transfer_token(accounts):
-    from lunespy.client.transactions.transfer import TransferToken
-    from lunespy.utils import now
-
-    return TransferToken(
-        sender=accounts["from"].public_key,
-        receiver=accounts["to"].address,
-        amount=1000,
-        chain="mainnet",
-        timestamp=now()
+    return Account(
+        private_key="8YMbX5BCQdazwgdVfeUpKuoUJrmYpMyGVAGAsNaHVj1u"
     )
 
 
-def test_transfer_ready(basic_transfer_token):
-    """
-        with a Account in chain `mainnet`:
-    """
+@fixture
+def receiver():
+    from lunespy.client.wallet import Account
 
-    assert basic_transfer_token.ready == True
+    return Account(
+        private_key="G6E2xNBWtsRG8XBDmeTQQxZNHHUa6K9dnc9KrYtKyGwM"
+    )
 
 
-def test_transfer_transaction(basic_transfer_token, accounts):
-    """
-        with a Account in chain `mainnet`:
-    """
+@fixture
+def basic_transfer_token(sender, receiver):
+    from lunespy.client.transactions.transfer import TransferToken
+
+    return TransferToken(
+        sender=sender.public_key,
+        receiver=receiver.address,
+        amount=1000,
+        chain="mainnet",
+        timestamp=timestamp
+    )
+
+
+@fixture
+def tx_with_sign(sender, receiver):
     from lunespy.client.transactions.constants import TransferType
 
-    assert basic_transfer_token.transaction == {
+    return {
         "ready": True,
         "type":  TransferType.to_int.value,
-        "sender": accounts["from"].address,
-        "senderPublicKey": accounts["from"].public_key,
-        "recipient": accounts["to"].address,
+        "sender": sender.address,
+        "senderPublicKey": sender.public_key,
+        "recipient": receiver.address,
         "amount": 100000000000,
-        "timestamp": basic_transfer_token.timestamp,
+        "timestamp": timestamp,
         "fee": TransferType.fee.value,
         "assetId": "",
         "feeAsset": ""
     }
 
 
-def test_transfer_sign(basic_transfer_token, accounts):
+def test_transfer_ready(basic_transfer_token):
+    """
+        passed public_key, address, amount, chain
+        should be return True for tx.ready
+    """
+
+    assert basic_transfer_token.ready == True
+
+
+def test_transfer_transaction(basic_transfer_token, tx_with_sign):
+    """
+        passed public_key, address, amount, chain
+        should be return a dict for tx.trasaction
+    """
+
+    assert basic_transfer_token.transaction == tx_with_sign
+
+
+def test_transfer_sign(basic_transfer_token, sender):
+    """
+        passed private_key
+        should be return a signature for tx.sign
+    """
     from lunespy.utils.crypto.converters import validate_sign
 
     tx = basic_transfer_token.sign(
-        accounts["from"].private_key
+        sender.private_key
     )
     assert True == validate_sign(
-        accounts["from"].public_key,
+        sender.public_key,
         tx["rawData"],
         tx["signature"]
     )
+
+
+def test_transfer_transaction_after_signed_tx(basic_transfer_token, sender):
+    """
+        after sign transaction
+        should be return a dict with `signature` and `rawData` keys for tx.transaction
+    """
+    before = basic_transfer_token.transaction
+    basic_transfer_token.sign(sender.private_key)
+    after = basic_transfer_token.transaction
+
+    assert before != after

@@ -29,23 +29,24 @@ class BaseTransaction(metaclass=ABCMeta):
         return sign_tx(private_key, **tx)
 
 
-    def send(self, send_tx, node_url: str) -> dict:
+    def send(self, send_tx, node_url: str, chain: str) -> dict:
         from lunespy.server.nodes import Node
 
         if node_url == None:
-            if self.sender.chain == 'mainnet':
+            if self.sender.chain == chain:
                 node_url = Node.mainnet_url.value
             else:
                 node_url = Node.testnet_url.value
 
-        mounted_tx = self.transaction
-        if mounted_tx['ready']:
-            tx_response = send_tx(mounted_tx, node_url=node_url)
+
+        if self._tx['ready']:
+            tx_response = send_tx(self._tx, node_url=node_url)
 
             if tx_response['send']:
                 id = tx_response['response'].get('id', sha256(tx_response))
+                msg = f'tx-{self.tx_type.replace(" ", "-")}-{id}'
                 self.show(
-                    name=f'tx-{self.tx_type.replace(" ", "-")}-{id}',
+                    name=msg,
                     data=tx_response
                 )
                 return tx_response
@@ -55,7 +56,7 @@ class BaseTransaction(metaclass=ABCMeta):
 
         else:
             print(bcolors.FAIL + f'{self.tx_type} Transaction dont send', bcolors.ENDC)
-            return mounted_tx
+            return self._tx
 
 
     def show(self, name: str, data: dict, path: str = './') -> None:
