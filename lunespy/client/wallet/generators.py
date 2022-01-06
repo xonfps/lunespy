@@ -1,16 +1,15 @@
 from lunespy.utils.crypto.converters import string_to_bytes
 from lunespy.utils.crypto.converters import hash_data
 from lunespy.client.wallet.constants import word_list
-from base58 import b58decode
-from base58 import b58encode
+from lunespy.utils import to_human, to_machine
 from os import urandom
 
 
 def address_generator(public_key: str, chain_id: str) -> dict:
     un_hashed_address = chr(1) + str(chain_id) + hash_data(public_key)[0:20]
     address_hash = hash_data(string_to_bytes(un_hashed_address))[0:4]
-    address = b58encode(string_to_bytes(un_hashed_address + address_hash))
-    public_key_b58 = b58encode(public_key)
+    address = to_human(string_to_bytes(un_hashed_address + address_hash))
+    public_key_b58 = to_human(public_key)
     return {
         'seed': "",
         'hash_seed': "",
@@ -18,12 +17,8 @@ def address_generator(public_key: str, chain_id: str) -> dict:
         'chain': 'mainnet' if chain_id == '1' else 'testnet',
         'chain_id': chain_id,
         'private_key': "",
-        'public_key': public_key_b58.decode(),
-        'address': address.decode(),
-        'byte_private_key': b"",
-        'byte_public_key': public_key_b58,
-        'byte_address': address
-
+        'public_key': public_key_b58,
+        'address': address
     }
 
 
@@ -62,23 +57,20 @@ def seed_generator(seed: str, nonce: int, chain_id: str) -> dict:
     address = address_generator(public_key, chain_id)
     return {
         'seed': seed,
-        'hash_seed': b58encode(seed).decode(),
+        'hash_seed': to_human(seed),
         'nonce': nonce,
         'chain': 'mainnet' if chain_id == '1' else 'testnet',
         'chain_id': chain_id,
-        'private_key': b58encode(private_key).decode(),
-        'public_key': b58encode(public_key).decode(),
-        'address': address['address'],
-        'byte_private_key': b58encode(private_key),
-        'byte_public_key': b58encode(public_key),
-        'byte_address': address['byte_address']
+        'private_key': to_human(private_key),
+        'public_key': to_human(public_key),
+        'address': address['address']
     }
 
 
 def private_key_generator(private_key: str, chain_id: str) -> dict:
     from axolotl_curve25519 import generatePublicKey
 
-    private_key_b58 = b58decode(private_key)
+    private_key_b58 = to_machine(private_key)
     public_key = generatePublicKey(private_key_b58)
     address = address_generator(public_key, chain_id)
     return {
@@ -87,18 +79,14 @@ def private_key_generator(private_key: str, chain_id: str) -> dict:
         'nonce': 0,
         'chain': 'mainnet' if chain_id == '1' else 'testnet',
         'chain_id': chain_id,
-        'private_key': b58encode(private_key_b58).decode(),
-        'public_key': b58encode(public_key).decode(),
-        'address': address['address'],
-        'byte_private_key': b58encode(private_key_b58),
-        'byte_public_key': b58encode(public_key),
-        'byte_address': address['byte_address']
-
+        'private_key': to_human(private_key_b58),
+        'public_key': to_human(public_key),
+        'address': address['address']
     }
-    
+
 
 def public_key_generator(public_key: str, chain_id: str) -> dict:
-    public_key_b58 = b58decode(public_key)
+    public_key_b58 = to_machine(public_key)
     address = address_generator(public_key_b58, chain_id)
     return {
         'seed': "",
@@ -107,11 +95,8 @@ def public_key_generator(public_key: str, chain_id: str) -> dict:
         'chain': 'mainnet' if chain_id == '1' else 'testnet',
         'chain_id': chain_id,
         'private_key': "",
-        'public_key': b58encode(public_key_b58).decode(),
-        'address': address['address'],
-        'byte_private_key': b"",
-        'byte_public_key': b58encode(public_key_b58),
-        'byte_address': address['byte_address']
+        'public_key': to_human(public_key_b58),
+        'address': address['address']
     }
 
 
@@ -131,7 +116,7 @@ def wallet_generator(**data: dict) -> dict:
     elif data.get('n_words', False):
         seed = new_seed_generator(n_words=data['n_words'])
         return seed_generator(seed=seed, nonce=data['nonce'], chain_id=data['chain_id'])
-    
+
     else:
         n_words: int = 12
         seed: str = new_seed_generator(n_words)
