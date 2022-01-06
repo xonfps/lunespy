@@ -9,6 +9,10 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+def flat_map(listOfLists):
+    from itertools import chain
+    return list(chain.from_iterable(listOfLists))
+
 
 def log_data(data: dict) -> None:
     list(map(
@@ -35,41 +39,74 @@ def export_json(data: dict, name: str, path: str) -> bool:
     return f"file save in {full_path}"
 
 
-def generate_log() -> None:
+def semantic_version() -> str:
     from subprocess import check_output
 
-    def get_logs() -> list:
+    def get_logs() -> list[str]:
         return check_output(
-            'git log --pretty="- [%h](%H) %s [%ai]"',
+            'git log --pretty="%s"',
             shell=True
         ).decode().split('\n')
-    
-    def logs_to_changelog(logs: list) -> list:
-        range_date = {}
-        for line in logs:
-            range_date[line[-27:-17]] = []
-            for commit in logs:
-                if line[-27:-17] == commit[-27:-17]:
-                    range_date[line[-27:-17]].append(commit)
 
-        changelog = ['# Changelog\n']
-        for date in range_date.keys():
-            changelog.append(f"\n## {date}\n")
-            for commit in range_date[date]:
-                edited_commit = commit[:-29] + '\n'
-                changelog.append(edited_commit)
-        
-        return changelog
+    major, minor, patch = 0,0,0
 
-    def save_changelog(changelog: list) -> None:
-        with open('./CHANGELOG.md', 'w') as file:
-            file.writelines(changelog)
-
-    save_changelog(
-        logs_to_changelog(
-            get_logs()
-            )
+    for commit in get_logs():
+        if commit.startswith("deprecated"):
+            patch = 0
+            minor = 0
+            major += 1
+        elif  commit.startswith("Merge" or "issued" or "merged"):
+            patch = 0
+            minor += 1
+        elif  commit.startswith("fixed" or "fix" or "Update"):
+            patch += 1
+    print(
+        bcolors.OKGREEN + f"v{major}.{minor}.{patch}" + bcolors.ENDC
     )
+    return f"v{major}.{minor}.{patch}"
+
+
+def changelog():
+    from subprocess import check_output
+    from os import system
+
+    deprecated = ["## Deprecated"]
+    merged_issued = ["## Issued"]
+    fixed = ["## Fixed"]
+    refactored = ["## Refactored"]
+    removed = ["## Removed"]
+    other = ["## Others"]
+    changelog = [
+        [f"# Changelog {semantic_version()}"],
+        deprecated, merged_issued, fixed, refactored, removed, other
+    ]
+
+    def get_logs() -> list[str]:
+        return check_output(
+            'git log --pretty="- [%h](%H) %s"',
+            shell=True
+        ).decode().split('\n')
+
+    for commit in get_logs():
+        if len(commit.split(" ")) > 3:
+            test = commit.split(" ")[2]
+
+            if test.startswith("deprecated"):
+                deprecated.append(commit)
+            elif  test.startswith("Merge" or "issued" or "merged" or "merg"):
+                merged_issued.append(commit)
+            elif  test.startswith("fixed" or "fix" or "Update"):
+                fixed.append(commit)
+            elif  test.startswith("refact" or "chang"):
+                refactored.append(commit)
+            elif  test.startswith("remov"):
+                removed.append(commit)
+        else:
+            other.append(commit)
+
+    with open('./CHANGELOG.md', 'w') as file:
+        for line in flat_map(changelog):
+            file.write(line + "\n")
 
 
 def now() -> int:
