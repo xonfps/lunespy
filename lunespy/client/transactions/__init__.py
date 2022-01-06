@@ -25,8 +25,8 @@ class BaseTransaction(metaclass=ABCMeta):
             return {'ready': False}
 
 
-    def sign(self) -> dict:
-        return ...
+    def sign(self, sign_tx, private_key, **tx) -> dict:
+        return sign_tx(private_key, **tx)
 
 
     def send(self, send_tx, node_url: str) -> dict:
