@@ -21,10 +21,10 @@ def validate_transfer(sender: str, receiver: str, amount: int, chain: str) -> bo
 
 def mount_transfer(sender: str, timestamp: str, receiver: str, asset_fee: str, asset_id: str, amount: int, chain_id: str, fee: int) -> dict:
     from lunespy.client.transactions.constants import TransferType
+    from lunespy.utils.crypto.converters import to_machine_b58
     from lunespy.client.wallet.generators import address_generator
-    from base58 import b58decode
 
-    address = address_generator(b58decode(sender), chain_id)['address']
+    address = address_generator(to_machine_b58(sender), chain_id)['address']
     return {
         "type": TransferType.to_int.value,
         "senderPublicKey": sender,
@@ -39,23 +39,23 @@ def mount_transfer(sender: str, timestamp: str, receiver: str, asset_fee: str, a
 
 
 def sign_transaction(private_key: str, **tx: dict) -> dict:
+    from lunespy.utils.crypto.converters import to_machine_b58, to_human_b58
     from lunespy.client.transactions.constants import TransferType
     from lunespy.utils.crypto.converters import sign
     from struct import pack
-    from lunespy.utils import to_machine, to_human
 
 
     bytes_data: bytes = TransferType.to_byte.value + \
-        to_machine(tx["senderPublicKey"]) + \
-        (b'\1' + to_machine(tx["assetId"]) if tx["assetId"] != "" else b'\0') + \
-        (b'\1' + to_machine(tx["feeAsset"]) if tx["feeAsset"] != "" else b'\0') + \
+        to_machine_b58(tx["senderPublicKey"]) + \
+        (b'\1' + to_machine_b58(tx["assetId"]) if tx["assetId"] != "" else b'\0') + \
+        (b'\1' + to_machine_b58(tx["feeAsset"]) if tx["feeAsset"] != "" else b'\0') + \
         pack(">Q", tx["timestamp"]) + \
         pack(">Q", tx["amount"]) + \
         pack(">Q", tx["fee"]) + \
-        to_machine(tx["recipient"])
+        to_machine_b58(tx["recipient"])
 
-    tx["signature"] = to_human(sign(private_key, bytes_data))
-    tx["rawData"] = to_human(bytes_data)
+    tx["signature"] = to_human_b58(sign(private_key, bytes_data))
+    tx["rawData"] = to_human_b58(bytes_data)
     return tx
 
 

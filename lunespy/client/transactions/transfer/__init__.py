@@ -19,6 +19,7 @@ class TransferToken(BaseTransaction):
         self.chain: str = chain
         self.chain_id: str = "1" if chain == "mainnet" else "0"
         self.history: list = []
+        self._tx = None
 
         super().__init__('Transfer', self.__dict__)
 
@@ -49,16 +50,18 @@ class TransferToken(BaseTransaction):
             sender=self.sender,
             chain_id=self.chain_id,
             fee=self.fee
-            )
+        ) if not self._tx else self._tx
+
 
     def sign(self, private_key: str) -> dict:
         from lunespy.client.transactions.transfer.validators import sign_transaction
 
-        return super().sign(
+        self._tx = super().sign(
             sign_tx=sign_transaction,
             private_key=private_key,
             **self.transaction
         )
+        return self._tx
 
     def send(self, node_url: str = None) -> dict:
         from lunespy.client.transactions.transfer.validators import send_transfer
