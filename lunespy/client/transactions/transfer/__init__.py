@@ -63,6 +63,7 @@ class TransferToken(BaseTransaction):
         )
         return self._tx
 
+
     def send(self, node_url: str = None) -> dict:
         from lunespy.client.transactions.transfer.validators import send_transfer
 
