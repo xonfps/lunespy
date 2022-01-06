@@ -1,15 +1,15 @@
+from lunespy.utils.crypto.converters import to_human_b58, to_machine_b58
 from lunespy.utils.crypto.converters import string_to_bytes
 from lunespy.utils.crypto.converters import hash_data
 from lunespy.client.wallet.constants import word_list
-from lunespy.utils import to_human, to_machine
 from os import urandom
 
 
-def address_generator(public_key: str, chain_id: str) -> dict:
+def address_generator(public_key: bytes, chain_id: str) -> dict:
     un_hashed_address = chr(1) + str(chain_id) + hash_data(public_key)[0:20]
     address_hash = hash_data(string_to_bytes(un_hashed_address))[0:4]
-    address = to_human(string_to_bytes(un_hashed_address + address_hash))
-    public_key_b58 = to_human(public_key)
+    address = to_human_b58(string_to_bytes(un_hashed_address + address_hash))
+    public_key_b58 = to_human_b58(public_key)
     return {
         'seed': "",
         'hash_seed': "",
@@ -57,12 +57,12 @@ def seed_generator(seed: str, nonce: int, chain_id: str) -> dict:
     address = address_generator(public_key, chain_id)
     return {
         'seed': seed,
-        'hash_seed': to_human(seed),
+        'hash_seed': to_human_b58(seed),
         'nonce': nonce,
         'chain': 'mainnet' if chain_id == '1' else 'testnet',
         'chain_id': chain_id,
-        'private_key': to_human(private_key),
-        'public_key': to_human(public_key),
+        'private_key': to_human_b58(private_key),
+        'public_key': to_human_b58(public_key),
         'address': address['address']
     }
 
@@ -70,7 +70,7 @@ def seed_generator(seed: str, nonce: int, chain_id: str) -> dict:
 def private_key_generator(private_key: str, chain_id: str) -> dict:
     from axolotl_curve25519 import generatePublicKey
 
-    private_key_b58 = to_machine(private_key)
+    private_key_b58 = to_machine_b58(private_key)
     public_key = generatePublicKey(private_key_b58)
     address = address_generator(public_key, chain_id)
     return {
@@ -79,14 +79,14 @@ def private_key_generator(private_key: str, chain_id: str) -> dict:
         'nonce': 0,
         'chain': 'mainnet' if chain_id == '1' else 'testnet',
         'chain_id': chain_id,
-        'private_key': to_human(private_key_b58),
-        'public_key': to_human(public_key),
+        'private_key': to_human_b58(private_key_b58),
+        'public_key': to_human_b58(public_key),
         'address': address['address']
     }
 
 
 def public_key_generator(public_key: str, chain_id: str) -> dict:
-    public_key_b58 = to_machine(public_key)
+    public_key_b58 = to_machine_b58(public_key)
     address = address_generator(public_key_b58, chain_id)
     return {
         'seed': "",
@@ -95,7 +95,7 @@ def public_key_generator(public_key: str, chain_id: str) -> dict:
         'chain': 'mainnet' if chain_id == '1' else 'testnet',
         'chain_id': chain_id,
         'private_key': "",
-        'public_key': to_human(public_key_b58),
+        'public_key': to_human_b58(public_key_b58),
         'address': address['address']
     }
 

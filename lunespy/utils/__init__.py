@@ -29,7 +29,7 @@ def export_json(data: dict, name: str, path: str) -> bool:
             file.write( json.dumps(data) )
     except Exception as msg:
         raise Exception(
-            bcolors.FAIL + f"[Error] File Don't Saved Because:\n{msg}" + bcolors.ENDC
+            bcolors.FAIL + f"[Error] File Don't Saved Because:\n└──{msg}" + bcolors.ENDC
         )
 
     return f"file save in {full_path}"
@@ -107,13 +107,3 @@ def drop_none(data: dict) -> dict:
         for key in data.keys()
         if key in validate_keys
     }
-
-
-def to_human(data: bytes) -> str:
-    from base58 import b58encode
-    return b58encode(data).decode()
-
-
-def to_machine(data: str) -> bytes:
-    from base58 import b58decode
-    return b58decode(data)

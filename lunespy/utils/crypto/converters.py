@@ -1,17 +1,25 @@
+def to_human_b58(data: bytes) -> str:
+    from base58 import b58encode
+
+    return b58encode(data).decode()
+
+
+def to_machine_b58(data: str) -> bytes:
+    from base58 import b58decode
+
+    return b58decode(data)
+
+
 def validate_sign(public_key, message, signature) -> bool:
     from axolotl_curve25519 import verifySignature
-    from lunespy.utils import to_machine
 
     verified = verifySignature(
-        to_machine(public_key),
-        to_machine(message),
-        to_machine(signature)
+        to_machine_b58(public_key),
+        to_machine_b58(message),
+        to_machine_b58(signature)
     )
 
-    if verified == 0:
-        return True
-    else:
-        return False
+    return True if verified == 0 else False
 
 
 def multirate_padding(used_bytes, align_bytes):
@@ -62,11 +70,11 @@ def hash_data(data: str) -> str:
 
 def sign(private_key: str, message: bytes) -> bytes:
     from axolotl_curve25519 import calculateSignature as curve
-    from lunespy.utils import to_machine
     from os import urandom
+
     return curve(
             urandom(64),
-            to_machine(private_key),
+            to_machine_b58(private_key),
             message
         )
 
@@ -77,13 +85,6 @@ def sha256(string: str) -> str:
     return sha256(
         string_to_bytes(string)
     ).digest()
-
-
-def id(message: str) -> str:
-    from base58 import b58encode
-    from hashlib import sha256
-
-    return b58encode(sha256( message ).digest())
 
 
 def ror(value, right, bits):
