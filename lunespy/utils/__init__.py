@@ -107,3 +107,13 @@ def drop_none(data: dict) -> dict:
         for key in data.keys()
         if key in validate_keys
     }
+
+
+def to_human(data: bytes) -> str:
+    from base58 import b58encode
+    return b58encode(data).decode()
+
+
+def to_machine(data: str) -> bytes:
+    from base58 import b58decode
+    return b58decode(data)
