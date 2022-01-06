@@ -58,6 +58,6 @@ class BaseTransaction(metaclass=ABCMeta):
             return mounted_tx
 
 
-    def show(self, name: str, data: dict, path: str = './data/') -> None:
+    def show(self, name: str, data: dict, path: str = './') -> None:
         log_data(data)
         export_json(data, name, path)
