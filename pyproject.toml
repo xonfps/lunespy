@@ -33,5 +33,6 @@ log = "lunespy.utils:generate_log"
 
 [tool.pytest.ini_options]
 markers = [
-    "requests: marks tests as slow"
+    "requests: marks tests as slow",
+    "now: marks current dev test"
 ]
