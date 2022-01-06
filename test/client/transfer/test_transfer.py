@@ -1,66 +1,68 @@
-from lunespy.client.transactions.transfer import TransferToken
-from lunespy.client.wallet.errors import InvalidChainAddress
-from lunespy.client.wallet import Account
-from pytest import raises
+from pytest import fixture, mark
 
 
-def test_ready_between_different_networks():
+@fixture
+def accounts():
+    from lunespy.client.wallet import Account
+    pk1 = "8YMbX5BCQdazwgdVfeUpKuoUJrmYpMyGVAGAsNaHVj1u"
+    pk2 = "G6E2xNBWtsRG8XBDmeTQQxZNHHUa6K9dnc9KrYtKyGwM"
+
+    return {
+        "from": Account(private_key=pk1),
+        "to": Account(private_key=pk2)
+    }
+
+
+@fixture
+def basic_transfer_token(accounts):
+    from lunespy.client.transactions.transfer import TransferToken
+    from lunespy.utils import now
+
+    return TransferToken(
+        sender=accounts["from"].public_key,
+        receiver=accounts["to"].address,
+        amount=1000,
+        chain="mainnet",
+        timestamp=now()
+    )
+
+
+def test_transfer_ready(basic_transfer_token):
     """
         with a Account in chain `mainnet`:
-            should br return Error for receiver in chain `testnet`
-        else should be return True
     """
-    sender_mainnet = Account(chain='mainnet')    
-    receiver_testnet = Account(chain='testnet')
 
-    with raises(InvalidChainAddress):
-        tx = TransferToken(sender_mainnet, receiver_testnet, amount=1)
-        tx.ready
-
-    sender_testnet = Account(chain='testnet')
-    tx = TransferToken(sender_testnet, receiver_testnet, amount=1)
-    assert tx.ready == True
+    assert basic_transfer_token.ready == True
 
 
-def test_ready_without_amount_failed_successful():
+def test_transfer_transaction(basic_transfer_token, accounts):
     """
-        with a sender, receiver and amount:
-            - should be return True for TransaferToken.ready
-        without a amount parameter:
-            - should be return False for TransaferToken.ready
+        with a Account in chain `mainnet`:
     """
-    # Failed
-    sender = Account()
-    receiver = Account()
-    tx = TransferToken(sender, receiver)
-    assert tx.ready == False
+    from lunespy.client.transactions.constants import TransferType
 
-    # Successful
-    tx.transfer_data['amount'] = 10
-    assert tx.ready == True
+    assert basic_transfer_token.transaction == {
+        "ready": True,
+        "type":  TransferType.to_int.value,
+        "sender": accounts["from"].address,
+        "senderPublicKey": accounts["from"].public_key,
+        "recipient": accounts["to"].address,
+        "amount": 100000000000,
+        "timestamp": basic_transfer_token.timestamp,
+        "fee": TransferType.fee.value,
+        "assetId": "",
+        "feeAsset": ""
+    }
 
 
-def test_transaction_full_data():
-    """
-        with a sender, receiver, amount:
-            - should be return all keys of offline_transaction for TransaferToken.transaction  
-    """
-    sender = Account()
-    receiver = Account()
-    offline_transaction = [
-        'ready',
-        'type',
-        'senderPublicKey',
-        'signature',
-        'timestamp',
-        'fee',
+def test_transfer_sign(basic_transfer_token, accounts):
+    from lunespy.utils.crypto.converters import validate_sign
 
-        'recipient',
-        'feeAsset',
-        'assetId',
-        'amount']
-    tx = TransferToken(sender, receiver, amount=10)
-    response = tx.transaction
-
-    assert response['ready'] == True
-    assert list(response.keys()) == offline_transaction
+    tx = basic_transfer_token.sign(
+        accounts["from"].private_key
+    )
+    assert True == validate_sign(
+        accounts["from"].public_key,
+        tx["rawData"],
+        tx["signature"]
+    )
