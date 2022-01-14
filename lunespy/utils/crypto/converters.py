@@ -1,10 +1,14 @@
-def to_human_b58(data: bytes) -> str:
+def from_hex(string: str) -> bytes:
+    return bytes.fromhex(string)
+
+
+def to_string_from_b58(data: bytes) -> str:
     from base58 import b58encode
 
     return b58encode(data).decode()
 
 
-def to_machine_b58(data: str) -> bytes:
+def to_bytes_from_b58(data: str) -> bytes:
     from base58 import b58decode
 
     return b58decode(data)
@@ -14,51 +18,15 @@ def validate_sign(public_key, message, signature) -> bool:
     from axolotl_curve25519 import verifySignature
 
     verified = verifySignature(
-        to_machine_b58(public_key),
-        to_machine_b58(message),
-        to_machine_b58(signature)
+        to_bytes_from_b58(public_key),
+        to_bytes_from_b58(message),
+        to_bytes_from_b58(signature)
     )
 
     return True if verified == 0 else False
 
 
-def multirate_padding(used_bytes, align_bytes):
-    padlen = align_bytes - used_bytes
-    if padlen == 0:
-        padlen = align_bytes
-    # note: padding done in 'internal bit ordering', wherein LSB is leftmost
-    if padlen == 1:
-        return [0x81]
-    else:
-        return [0x01] + ([0x00] * (int(padlen) - 2)) + [0x80]
-
-
-def bits_to_bytes(x):
-    return (int(x) + 7) / 8
-
-
-def string_to_bytes(string: str) -> bytes:
-    return string.encode('latin-1')
-
-
-def string_to_list(string: str) -> list:
-    return [char for char in string]
-
-
-def bytes_to_string(bytes: bytes, decode: bool=False) -> str:
-    if not decode:
-        return ''.join(
-            map(chr, bytes)
-        )
-    else:
-        from base58 import b58decode
-
-        return ''.join(
-            map(chr, b58decode(bytes))
-        )
-
-
-def hash_data(data: str) -> str:
+def hash_data(data: bytes) -> str:
     from lunespy.utils.crypto.algorithms import KeccakHash
     from hashlib import blake2b
     keccak256 = KeccakHash()
@@ -74,73 +42,15 @@ def sign(private_key: str, message: bytes) -> bytes:
 
     return curve(
             urandom(64),
-            to_machine_b58(private_key),
+            to_bytes_from_b58(private_key),
             message
         )
 
 
-def sha256(string: str) -> str:
+def sha256(string: bytes) -> bytes:
     from hashlib import sha256
 
     return sha256(
-        string_to_bytes(string)
+        string
     ).digest()
 
-
-def ror(value, right, bits):
-    from lunespy.utils.crypto import Masks
-
-    top = value >> right
-    bot = (value & Masks[right]) << (bits - right)
-    return bot | top
-
-
-def rol(value, left, bits):
-    from lunespy.utils.crypto import Masks
-
-    top = value >> (bits - left)
-    bot = (value & Masks[bits - left]) << left
-    return bot | top
-
-
-def keccak_f(state):
-    from lunespy.utils.crypto import RoundConstants
-    from math import log
-
-    def round(A, RC):
-        from lunespy.utils.crypto import RotationConstants
-        from functools import reduce
-        from operator import xor
-
-        W, H = state.W, state.H
-        rangeW, rangeH = state.rangeW, state.rangeH
-        lanew = state.lanew
-        zero = state.zero
-
-        # theta
-        C = [reduce(xor, A[x]) for x in rangeW]
-        D = [0] * W
-        for x in rangeW:
-            D[x] = C[(x - 1) % W] ^ rol(C[(x + 1) % W], 1, lanew)
-            for y in rangeH:
-                A[x][y] ^= D[x]
-
-        # rho and pi
-        B = zero()
-        for x in rangeW:
-            for y in rangeH:
-                B[y % W][(2 * x + 3 * y) % H] = rol(A[x][y], RotationConstants[y][x], lanew)
-
-        # chi
-        for x in rangeW:
-            for y in rangeH:
-                A[x][y] = B[x][y] ^ ((~ B[(x + 1) % W][y]) & B[(x + 2) % W][y])
-
-        # iota
-        A[0][0] ^= RC
-
-    l = int(log(state.lanew, 2))
-    nr = 12 + 2 * l
-
-    for ir in range(nr):
-        round(state.s, RoundConstants[ir])

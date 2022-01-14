@@ -44,6 +44,7 @@
 - [13611fc](13611fc963a72b775ed02e7b8f007571e3ed6243) Merge  'feature/new-architecture' -> 'master'
 - [c78af04](c78af048cde86b86eb923a9945e8c1c5d53f4617) Merge pull request #1 from VanJustin/master
 ## Fixed
+- [fbd688c](fbd688c06e7bdcf0deb4eedd11fff91c7d5a21ce) fixed: format lint
 - [758392f](758392f58db8e59774664293c372d29a4793710b) fixed: bit row
 - [58e7629](58e7629aba8a03ae16713bf07c89bf1731959a3d) fixed: data directory not found
 - [e1f6903](e1f69037497ce8a9587bc9e46529c3913af61739) fixed: path of python for run pytest in '.'
@@ -94,6 +95,9 @@
 - [cb2285d](cb2285d81c5706fb41a44cc5b7a94d63e6683dea) fixed: template method
 - [8ee052d](8ee052dacf4c96e7af73c86228a593597e97951e) fixed: bytes data
 ## Refactored
+- [17b4e2c](17b4e2c47314ed255693675e9ea3f3aea5ec5e36) refactored: crypto functions
+- [300008a](300008a83d3d2de2a8d07375b805884124526ac1) refactored: account class
+- [771f378](771f378d4b34d82d6093f3ad1f8dbff222bc325d) refactored: generator to utils
 - [38d08fe](38d08fe6f2618cd4743f699b3484e66fde33fde6) refactored: move test to `transactions` dir
 - [e17b00e](e17b00e8915f21a2f6c5944f84aced351b381f97) refactored: to new `to_human` and `to_machine`
 - [0484d54](0484d5447e03fb32487c50710f7a2406c13b375e) refactored: rename `network` to `chain`
