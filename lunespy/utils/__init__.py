@@ -46,7 +46,7 @@ def semantic_version() -> str:
         return check_output(
             'git log --pretty="%s"',
             shell=True
-        ).decode().split('\n')
+        ).decode().split('\n')[::-1]
 
     major, minor, patch = 0,0,0
 
